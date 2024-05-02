@@ -1,19 +1,12 @@
-use digital_test_runner::{dig, TestCaseLoader};
+use digital_test_runner::{dig, SignalDirection, TestCase};
 
 fn main() -> anyhow::Result<()> {
     let path = std::env::args().nth(1).unwrap_or(String::from("ALU.dig"));
     eprintln!("Loading {path}");
     let input = std::fs::read_to_string(path).unwrap();
     let dig_file = dig::parse(&input).unwrap();
-    let mut builder = TestCaseLoader::try_from_dig(&dig_file, 2)?;
-    for input in dig_file.inputs.iter().filter(|input| input.bits > 1) {
-        builder = builder.expand(&input.name, input.bits);
-    }
-    for output in dig_file.outputs.iter().filter(|output| output.bits > 1) {
-        builder = builder.expand(&output.name, output.bits);
-    }
-    let test_case = builder.try_build()?;
-    let results = test_case.run();
+
+    let test_case = TestCase::try_from_static_dig(&dig_file, 1)?;
 
     println!(
         r#"`define assert_eq(signal, value) \
@@ -23,66 +16,28 @@ fn main() -> anyhow::Result<()> {
     );
     println!();
 
-    println!("module tb (");
-
-    let mut ports = Vec::with_capacity(test_case.inputs.len() + test_case.outputs.len());
-    ports.extend(
-        test_case
-            .inputs
-            .iter()
-            .map(|input| format!("    output reg \\{} ", input.name)),
-    );
-    ports.extend(
-        test_case
-            .outputs
-            .iter()
-            .map(|output| format!("    input \\{} ", output.name)),
-    );
-    println!("{}", ports.join(",\n"));
-    println!(");");
-    println!("initial begin");
-    for input in &test_case.inputs {
-        let val = match input.default {
-            digital_test_runner::InputValue::Value(n) => format!("{n}"),
-            digital_test_runner::InputValue::Z => String::from("Z"),
-        };
-        println!("    \\{} = {val};", input.name);
-    }
-    println!("#10;");
-    println!("#10;");
-
-    let mut prev_data = test_case
-        .inputs
+    let ports = test_case
+        .signals
         .iter()
-        .map(|input| match input.default {
-            digital_test_runner::InputValue::Value(n) => digital_test_runner::DataResult::Number(n),
-            digital_test_runner::InputValue::Z => digital_test_runner::DataResult::Z,
-        })
-        .collect::<Vec<_>>();
-
-    for result in results {
-        for (input, (data, prev_data)) in test_case
-            .inputs
-            .iter()
-            .zip(result.inputs.iter().zip(prev_data.iter_mut()))
-        {
-            if data == prev_data {
-                continue;
-            }
-            let val = match data {
-                digital_test_runner::DataResult::Number(n) => format!("{n}"),
-                digital_test_runner::DataResult::X => unreachable!(),
-                digital_test_runner::DataResult::Z => String::from("Z"),
+        .map(|sig| {
+            let io_type = match sig.dir {
+                SignalDirection::Input { .. } => "output reg",
+                SignalDirection::Output => "input",
             };
-            println!("    \\{} = {val};", input.name);
-            *prev_data = data.clone();
+            format!("    {io_type} \\{} ", sig.name)
+        })
+        .collect::<Vec<_>>()
+        .join(",\n");
+    println!("module tb (\n{ports}\n);");
+    println!("initial begin");
+
+    for row in &test_case {
+        for input in row.changed_inputs() {
+            println!("    \\{} = {};", input.name, input.value);
         }
         println!("#10;");
-        for (output, data) in test_case.outputs.iter().zip(result.outputs.iter()) {
-            if let digital_test_runner::DataResult::Number(n) = data {
-                let n = n & (1 << output.bits - 1);
-                println!("    `assert_eq(\\{} , {n});", output.name);
-            }
+        for output in row.checked_outputs() {
+            println!("    `assert_eq(\\{} , {});", output.name, output.value);
         }
         println!("#10;");
         println!();
