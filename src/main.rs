@@ -24,7 +24,12 @@ fn main() -> anyhow::Result<()> {
                 SignalDirection::Input { .. } => "output reg",
                 SignalDirection::Output => "input",
             };
-            format!("    {io_type} \\{} ", sig.name)
+            let width = if sig.bits > 1 {
+                format!("[{}:0]", sig.bits - 1)
+            } else {
+                String::from("")
+            };
+            format!("    {io_type} {width} \\{} ", sig.name)
         })
         .collect::<Vec<_>>()
         .join(",\n");
