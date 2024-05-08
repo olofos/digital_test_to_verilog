@@ -19,8 +19,8 @@ struct Cli {
 }
 
 fn parse_timescale(s: &str) -> Result<String, String> {
-    const HALF: &str = "[0-9]+[munp]?s";
-    const FULL: &str = "[0-9]+[munp]?s/[0-9]+[munp]?s";
+    const HALF: &str = "[0-9]+[munpf]?s";
+    const FULL: &str = "[0-9]+[munpf]?s/[0-9]+[munpf]?s";
 
     let r = regex::Regex::new(FULL).unwrap();
     if r.is_match(s) {
