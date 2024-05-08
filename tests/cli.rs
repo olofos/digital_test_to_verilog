@@ -6,9 +6,9 @@ fn cli_works() {
     cmd.arg("--help").assert().success();
 }
 
-#[test]
-fn can_load_test_file() {
-    let expected_ouput = r#"`define assert_eq(signal, value) \
+fn expected_ouput(pre: &str, default: &str, delay1: &str, delay2: &str) -> String {
+    format!(
+        r#"{pre}`define assert_eq(signal, value) \
     if (signal !== value) begin \
         $display("ASSERTION FAILED in %m: signal != value"); \
     end
@@ -19,15 +19,21 @@ module tb (
     input [7:0] \S ,
     input  \C 
 );
-initial begin
+initial begin{default}
     \A = 1;
     \B = 1;
-#10;
+{delay1}
     `assert_eq(\S , 2);
-
+{delay2}
 end
 endmodule
-"#;
+"#
+    )
+}
+
+#[test]
+fn can_load_test_file() {
+    let expected_ouput = expected_ouput("", "", "#10;", "");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
@@ -41,28 +47,7 @@ endmodule
 
 #[test]
 fn timescale_works() {
-    let expected_ouput = r#"`timescale 1us/1ns
-
-`define assert_eq(signal, value) \
-    if (signal !== value) begin \
-        $display("ASSERTION FAILED in %m: signal != value"); \
-    end
-
-module tb (
-    output reg [7:0] \A ,
-    output reg [7:0] \B ,
-    input [7:0] \S ,
-    input  \C 
-);
-initial begin
-    \A = 1;
-    \B = 1;
-#10;
-    `assert_eq(\S , 2);
-
-end
-endmodule
-"#;
+    let expected_ouput = expected_ouput("`timescale 1us/1ns\n\n", "", "#10;", "");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
@@ -78,28 +63,7 @@ endmodule
 
 #[test]
 fn timescale_works_with_one_time() {
-    let expected_ouput = r#"`timescale 1us/1us
-
-`define assert_eq(signal, value) \
-    if (signal !== value) begin \
-        $display("ASSERTION FAILED in %m: signal != value"); \
-    end
-
-module tb (
-    output reg [7:0] \A ,
-    output reg [7:0] \B ,
-    input [7:0] \S ,
-    input  \C 
-);
-initial begin
-    \A = 1;
-    \B = 1;
-#10;
-    `assert_eq(\S , 2);
-
-end
-endmodule
-"#;
+    let expected_ouput = expected_ouput("`timescale 1us/1us\n\n", "", "#10;", "");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
@@ -114,28 +78,21 @@ endmodule
 }
 
 #[test]
+fn timescale_gives_error_for_unknown_unit() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.args([
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/test.dig"),
+        "1",
+        "--timescale",
+        "1km",
+    ])
+    .assert()
+    .failure();
+}
+
+#[test]
 fn delay_works() {
-    let expected_ouput = r#"`define assert_eq(signal, value) \
-    if (signal !== value) begin \
-        $display("ASSERTION FAILED in %m: signal != value"); \
-    end
-
-module tb (
-    output reg [7:0] \A ,
-    output reg [7:0] \B ,
-    input [7:0] \S ,
-    input  \C 
-);
-initial begin
-    \A = 1;
-    \B = 1;
-#20;
-    `assert_eq(\S , 2);
-#10;
-
-end
-endmodule
-"#;
+    let expected_ouput = expected_ouput("", "", "#20;", "#10;\n");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
@@ -151,26 +108,7 @@ endmodule
 
 #[test]
 fn delay_works_with_one_number() {
-    let expected_ouput = r#"`define assert_eq(signal, value) \
-    if (signal !== value) begin \
-        $display("ASSERTION FAILED in %m: signal != value"); \
-    end
-
-module tb (
-    output reg [7:0] \A ,
-    output reg [7:0] \B ,
-    input [7:0] \S ,
-    input  \C 
-);
-initial begin
-    \A = 1;
-    \B = 1;
-#20;
-    `assert_eq(\S , 2);
-
-end
-endmodule
-"#;
+    let expected_ouput = expected_ouput("", "", "#20;", "");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
@@ -178,6 +116,26 @@ endmodule
         "1",
         "--delay",
         "20",
+    ])
+    .assert()
+    .success()
+    .stdout(expected_ouput);
+}
+
+#[test]
+fn default_works() {
+    let default = r#"
+    \A = 0;
+    \B = 0;
+#10;
+"#;
+    let expected_ouput = expected_ouput("", default, "#10;", "");
+
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.args([
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/test.dig"),
+        "1",
+        "--default",
     ])
     .assert()
     .success()
