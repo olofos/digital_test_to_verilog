@@ -1,2 +1,5 @@
 /target
-*.dig
+/*.dig
+/*.v
+/a.out
+/*.vcd
