@@ -10,6 +10,8 @@ struct Cli {
     file: PathBuf,
     #[arg(default_value_t = 0)]
     test_num: usize,
+    #[arg(long, short)]
+    output: Option<PathBuf>,
     #[arg(long, short, value_parser = parse_timescale)]
     timescale: Option<String>,
     #[arg(long)]
@@ -55,21 +57,23 @@ fn parse_delay(s: &str) -> Result<(u32, u32), String> {
 }
 
 fn print_row<'a>(
+    out: &mut Box<dyn std::io::Write>,
     inputs: impl Iterator<Item = DataEntry<'a, InputValue>>,
     outputs: impl Iterator<Item = DataEntry<'a, OutputValue>>,
     delay: (u32, u32),
-) {
+) -> anyhow::Result<()> {
     for input in inputs {
-        println!("    \\{} = {};", input.name, input.value);
+        writeln!(out, "    \\{} = {};", input.name, input.value)?;
     }
-    println!("#{};", delay.0);
+    writeln!(out, "#{};", delay.0)?;
     for output in outputs {
-        println!("    `assert_eq(\\{} , {});", output.name, output.value);
+        writeln!(out, "    `assert_eq(\\{} , {});", output.name, output.value)?;
     }
     if delay.1 > 0 {
-        println!("#{};", delay.1);
+        writeln!(out, "#{};", delay.1)?;
     }
-    println!();
+    writeln!(out, "")?;
+    Ok(())
 }
 
 fn main() -> anyhow::Result<()> {
@@ -83,17 +87,28 @@ fn main() -> anyhow::Result<()> {
 
     let test_case = TestCase::try_from_static_dig(&dig_file, test_num)?;
 
+    let mut out: Box<dyn std::io::Write> = if let Some(path) = cli.output {
+        let Ok(file) = std::fs::File::create(&path) else {
+            anyhow::bail!("Could not open file {path:?} for output");
+        };
+        eprintln!("Writing output to {path:?}");
+        Box::new(file)
+    } else {
+        Box::new(std::io::stdout())
+    };
+
     if let Some(timescale) = cli.timescale {
-        println!("`timescale {timescale}\n");
+        writeln!(out, "`timescale {timescale}\n")?;
     }
 
-    println!(
+    writeln!(
+        out,
         r#"`define assert_eq(signal, value) \
     if (signal !== value) begin \
         $display("ASSERTION FAILED in %m: signal != value"); \
     end"#
-    );
-    println!();
+    )?;
+    writeln!(out,)?;
 
     let ports = test_case
         .signals
@@ -112,21 +127,26 @@ fn main() -> anyhow::Result<()> {
         })
         .collect::<Vec<_>>()
         .join(",\n");
-    println!("module tb (\n{ports}\n);");
-    println!("initial begin");
+    writeln!(out, "module tb (\n{ports}\n);")?;
+    writeln!(out, "initial begin")?;
 
     let mut iter = test_case.iter().skip(if cli.default { 0 } else { 1 });
 
     if let Some(row) = iter.next() {
-        print_row(row.inputs(), row.checked_outputs(), cli.delay);
+        print_row(&mut out, row.inputs(), row.checked_outputs(), cli.delay)?;
     }
 
     for row in iter {
-        print_row(row.changed_inputs(), row.checked_outputs(), cli.delay);
+        print_row(
+            &mut out,
+            row.changed_inputs(),
+            row.checked_outputs(),
+            cli.delay,
+        )?;
     }
 
-    println!("end");
-    println!("endmodule");
+    writeln!(out, "end")?;
+    writeln!(out, "endmodule")?;
 
     Ok(())
 }
