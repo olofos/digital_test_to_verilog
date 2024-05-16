@@ -167,4 +167,6 @@ fn output_to_file_works() {
     file.read_to_string(&mut content)
         .expect("Could not read output file.");
     assert_eq!(content, expected_ouput);
+
+    std::fs::remove_file(filename).unwrap_or(());
 }
