@@ -72,7 +72,7 @@ fn print_row<'a>(
     if delay.1 > 0 {
         writeln!(out, "#{};", delay.1)?;
     }
-    writeln!(out, "")?;
+    writeln!(out)?;
     Ok(())
 }
 
