@@ -12,5 +12,8 @@ digital_test_runner = { path = "../digital_test_runner" }
 regex = "1.10.4"
 
 [dev-dependencies]
-assert_cmd = {version  ="2.0.14", features = ["color"]}
-test-with = { version = "0.12.6", default-features = false, features = ["executable"] }
+assert_cmd = { version = "2.0.14", features = ["color"] }
+test-with = { version = "0.12.6", default-features = false, features = [
+    "executable",
+] }
+rand = "0.8.5"

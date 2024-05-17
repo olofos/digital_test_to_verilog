@@ -1,5 +1,7 @@
 use assert_cmd::Command;
 
+mod util;
+
 #[test]
 fn cli_works() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
@@ -145,28 +147,27 @@ fn default_works() {
 #[test]
 fn output_to_file_works() {
     use std::io::Read;
+    let dir = util::TempDir::create("output_to_file_works");
 
     let expected_ouput = expected_ouput("", "", "#10;", "");
-    let filename = concat!(env!("CARGO_TARGET_TMPDIR"), "/output_to_file_works.v");
-
-    std::fs::remove_file(filename).unwrap_or(());
+    let path = dir.file("output_to_file_works.v");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
         concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
         "1",
         "-o",
-        filename,
     ])
+    .arg(&path)
     .assert()
     .success()
     .stdout("");
 
-    let mut file = std::fs::File::open(filename).expect("Could not open output file.");
+    let mut file = std::fs::File::open(&path).expect("Could not open output file.");
     let mut content = String::new();
     file.read_to_string(&mut content)
         .expect("Could not read output file.");
     assert_eq!(content, expected_ouput);
 
-    std::fs::remove_file(filename).unwrap_or(());
+    dir.delete();
 }
