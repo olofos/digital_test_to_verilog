@@ -13,6 +13,7 @@ fn expected_ouput(pre: &str, default: &str, delay1: &str, delay2: &str) -> Strin
         r#"{pre}`define assert_eq(signal, value) \
     if (signal !== value) begin \
         $display("ASSERTION FAILED in %m: signal != value"); \
+        error_count += 1; \
     end
 
 module tb (
@@ -21,12 +22,18 @@ module tb (
     input [7:0] \S ,
     input  \C 
 );
+integer error_count = 0;
 initial begin{default}
     \A = 1;
     \B = 1;
 {delay1}
     `assert_eq(\S , 2);
 {delay2}
+  if(error_count > 0) begin
+    $display("There were failed assertions");
+    $finish_and_return(1);
+  end
+  $display("All tests passed.");
 end
 endmodule
 "#

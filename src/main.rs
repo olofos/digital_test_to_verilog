@@ -106,6 +106,7 @@ fn main() -> anyhow::Result<()> {
         r#"`define assert_eq(signal, value) \
     if (signal !== value) begin \
         $display("ASSERTION FAILED in %m: signal != value"); \
+        error_count += 1; \
     end"#
     )?;
     writeln!(out,)?;
@@ -128,6 +129,7 @@ fn main() -> anyhow::Result<()> {
         .collect::<Vec<_>>()
         .join(",\n");
     writeln!(out, "module tb (\n{ports}\n);")?;
+    writeln!(out, "integer error_count = 0;")?;
     writeln!(out, "initial begin")?;
 
     let mut iter = test_case.iter().skip(if cli.default { 0 } else { 1 });
@@ -144,6 +146,12 @@ fn main() -> anyhow::Result<()> {
             cli.delay,
         )?;
     }
+
+    writeln!(out, "  if(error_count > 0) begin")?;
+    writeln!(out, "    $display(\"There were failed assertions\");")?;
+    writeln!(out, "    $finish_and_return(1);")?;
+    writeln!(out, "  end")?;
+    writeln!(out, "  $display(\"All tests passed.\");")?;
 
     writeln!(out, "end")?;
     writeln!(out, "endmodule")?;
