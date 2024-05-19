@@ -57,4 +57,34 @@ mod tests {
 
         dir.delete();
     }
+
+    #[test]
+    fn adder_failure_fails_with_an_error() {
+        let dir = util::TempDir::create("adder_failure_fails_with_an_error");
+
+        let file = dir.file("adder_failure_fails_with_an_error.v");
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+        cmd.args([
+            concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
+            "1",
+            "-o",
+        ])
+        .arg(&file)
+        .assert()
+        .success();
+
+        assert!(file.exists());
+
+        let exec_file = dir.file("out");
+
+        let mut iverilog = iverilog_command(&["adder.v", "adder_scaffold.v"], &[&file], &exec_file);
+        iverilog.assert().success();
+
+        assert!(exec_file.exists());
+
+        let mut cmd = Command::new(&exec_file);
+        cmd.assert().failure();
+
+        dir.delete();
+    }
 }
