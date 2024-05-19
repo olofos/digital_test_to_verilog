@@ -132,13 +132,12 @@ fn main() -> anyhow::Result<()> {
     writeln!(out, "integer error_count = 0;")?;
     writeln!(out, "initial begin")?;
 
-    let mut iter = test_case.iter().skip(if cli.default { 0 } else { 1 });
-
-    if let Some(row) = iter.next() {
+    if cli.default {
+        let row = test_case.default_row();
         print_row(&mut out, row.inputs(), row.checked_outputs(), cli.delay)?;
     }
 
-    for row in iter {
+    for row in test_case.iter() {
         print_row(
             &mut out,
             row.changed_inputs(),
