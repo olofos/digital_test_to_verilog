@@ -47,7 +47,7 @@ fn can_load_test_file() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
         concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
-        "1",
+        "0",
     ])
     .assert()
     .success()
@@ -61,7 +61,7 @@ fn timescale_works() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
         concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
-        "1",
+        "0",
         "--timescale",
         "1us/1ns",
     ])
@@ -77,7 +77,7 @@ fn timescale_works_with_one_time() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
         concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
-        "1",
+        "0",
         "--timescale",
         "1us",
     ])
@@ -91,7 +91,7 @@ fn timescale_gives_error_for_unknown_unit() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
         concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
-        "1",
+        "0",
         "--timescale",
         "1km",
     ])
@@ -106,7 +106,7 @@ fn delay_works() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
         concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
-        "1",
+        "0",
         "--delay",
         "20:10",
     ])
@@ -122,7 +122,7 @@ fn delay_works_with_one_number() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
         concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
-        "1",
+        "0",
         "--delay",
         "20",
     ])
@@ -143,7 +143,7 @@ fn default_works() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
         concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
-        "1",
+        "0",
         "--default",
     ])
     .assert()
@@ -162,7 +162,7 @@ fn output_to_file_works() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
         concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
-        "1",
+        "0",
         "-o",
     ])
     .arg(&path)

@@ -36,7 +36,7 @@ mod tests {
         let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
         cmd.args([
             concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
-            "1",
+            "0",
             "-o",
         ])
         .arg(&file)
@@ -54,5 +54,7 @@ mod tests {
 
         let mut cmd = Command::new(&exec_file);
         cmd.assert().success().stdout("All tests passed.\n");
+
+        dir.delete();
     }
 }
