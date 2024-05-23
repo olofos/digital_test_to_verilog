@@ -120,47 +120,47 @@ mod tests {
     }
 
     #[rstest]
-    #[case(0)]
-    #[case(1)]
-    #[case(2)]
-    #[case(3)]
-    #[case(4)]
-    #[case(5)]
-    #[case(6)]
-    #[case(7)]
-    #[case(8)]
-    // Skip case 9 because it involves one extra signal, thus requiring a different scaffold for now
-    #[case(10)]
-    #[case(11)]
-    #[case(12)]
-    #[case(13)]
-    #[case(14)]
-    #[case(15)]
-    #[case(16)]
-    #[case(17)]
-    #[case(18)]
-    #[case(19)]
-    #[case(20)]
-    #[case(21)]
-    #[case(22)]
-    #[case(23)]
-    #[case(24)]
-    #[case(25)]
-    #[case(26)]
-    #[case(27)]
-    #[case(28)]
-    #[case(29)]
-    #[case(30)]
-    #[case(31)]
+    #[case("A (A0000)")]
+    #[case("A OR B (A0001)")]
+    #[case("A OR !B (A0010)")]
+    #[case("minus 1 (A0011)")]
+    #[case("A plus (A AND !B) (A0100)")]
+    #[case("(A OR B) plus (A AND !B) (A0101)")]
+    #[case("A minus B minus 1 (A0110)")]
+    #[case("(A AND !B) minus 1 (A0111)")]
+    #[case("A plus (A AND B) (A1000)")]
+    // Skip case #[case("A plus B (A1001)")]
+    #[case("(A OR !B) plus (A AND B) (A1010)")]
+    #[case("(A AND B) minus 1 (A1011)")]
+    #[case("A plus A (A1100)")]
+    #[case("(A OR B) plus A (A1101)")]
+    #[case("(A OR !B) plus A (A1110)")]
+    #[case("A minus 1 (A1111)")]
+    #[case("!A (L0000)")]
+    #[case("!A AND !B (L0001)")]
+    #[case("!A AND B (L0010)")]
+    #[case("logic 0 (L0011)")]
+    #[case("!(A AND B) (L0100)")]
+    #[case("!B (L0101)")]
+    #[case("A XOR B (L0110)")]
+    #[case("A AND !B (L0111)")]
+    #[case("!A OR B (L1000)")]
+    #[case("!(A XOR B) (L1001)")]
+    #[case("B (L1010)")]
+    #[case("A AND B (L1011)")]
+    #[case("logic 1 (L1100)")]
+    #[case("A OR !B (L1101)")]
+    #[case("A OR B (L1110)")]
+    #[case("A (L1111)")]
 
-    fn test_74181_runs(#[case] test_num: usize) {
-        let dir = util::TempDir::create(format!("test_74181_{test_num}_runs"));
+    fn test_74181_runs(#[case] name: &str) {
+        let dir = util::TempDir::create(format!("test_74181_runs"));
 
         let file = dir.file("74181.v");
         let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
         cmd.args([
             concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/74181.dig"),
-            format!("{test_num}").as_str(),
+            name,
             "-o",
         ])
         .arg(&file)

@@ -4,12 +4,17 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum TestCaseSelector {
+    Number(usize),
+    Name(String),
+}
+
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
     file: PathBuf,
-    #[arg(default_value_t = 0)]
-    test_num: usize,
+    test: Option<TestCaseSelector>,
     #[arg(long, short)]
     output: Option<PathBuf>,
     #[arg(long, short, value_parser = parse_timescale)]
@@ -18,6 +23,15 @@ struct Cli {
     default: bool,
     #[arg(long, short, default_value = "10:0", value_parser = parse_delay)]
     delay: (u32, u32),
+}
+
+impl std::str::FromStr for TestCaseSelector {
+    type Err = &'static str; // The actual type doesn't matter since we never error, but it must implement `Display`
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(s.parse::<usize>()
+            .map(Self::Number)
+            .unwrap_or_else(|_| Self::Name(s.to_string())))
+    }
 }
 
 fn parse_timescale(s: &str) -> Result<String, String> {
@@ -80,11 +94,40 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     let path = cli.file;
-    let test_num = cli.test_num;
-    eprintln!("Loading {path:?} test #{test_num}");
-    let input = std::fs::read_to_string(path).unwrap();
+    eprintln!("Loading {path:?}");
+    let input = std::fs::read_to_string(&path).unwrap();
     let dig_file = dig::parse(&input).unwrap();
 
+    let test_num = match cli.test {
+        Some(TestCaseSelector::Number(test_num)) => test_num,
+        Some(TestCaseSelector::Name(name)) => {
+            if let Some(test_num) = dig_file
+                .test_cases
+                .iter()
+                .position(|test_case| test_case.name == name)
+            {
+                test_num
+            } else {
+                anyhow::bail!("No test case \"{name}\" found");
+            }
+        }
+        None => {
+            if dig_file.test_cases.len() == 1 {
+                0
+            } else {
+                eprintln!("There are more than one test case in {path:?}");
+                for (i, test_case) in dig_file.test_cases.iter().enumerate() {
+                    if test_case.name.is_empty() {
+                        eprintln!("{i}: [No name]");
+                    } else {
+                        eprintln!("{i}: {}", test_case.name);
+                    }
+                }
+                anyhow::bail!("Please specify a test case");
+            }
+        }
+    };
+    eprintln!("Loading test case #{test_num}");
     let test_case = TestCase::try_from_static_dig(&dig_file, test_num)?;
 
     let mut out: Box<dyn std::io::Write> = if let Some(path) = cli.output {

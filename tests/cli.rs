@@ -55,6 +55,20 @@ fn can_load_test_file() {
 }
 
 #[test]
+fn can_load_test_by_name() {
+    let expected_ouput = expected_ouput("", "", "#10;", "");
+
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.args([
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
+        "Simple",
+    ])
+    .assert()
+    .success()
+    .stdout(expected_ouput);
+}
+
+#[test]
 fn timescale_works() {
     let expected_ouput = expected_ouput("`timescale 1us/1ns\n\n", "", "#10;", "");
 
