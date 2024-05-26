@@ -25,6 +25,40 @@ struct Cli {
     delay: (u32, u32),
 }
 
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+enum VerilogValue {
+    Value(i64),
+    Z,
+}
+
+impl From<OutputValue> for VerilogValue {
+    fn from(value: OutputValue) -> Self {
+        match value {
+            OutputValue::Value(num) => VerilogValue::Value(num),
+            OutputValue::Z => VerilogValue::Z,
+            OutputValue::X => panic!("Unexpected X output value"),
+        }
+    }
+}
+
+impl From<InputValue> for VerilogValue {
+    fn from(value: InputValue) -> Self {
+        match value {
+            InputValue::Value(num) => VerilogValue::Value(num),
+            InputValue::Z => VerilogValue::Z,
+        }
+    }
+}
+
+impl std::fmt::Display for VerilogValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VerilogValue::Value(num) => write!(f, "{num}"),
+            VerilogValue::Z => write!(f, "'Z"),
+        }
+    }
+}
+
 impl std::str::FromStr for TestCaseSelector {
     type Err = &'static str; // The actual type doesn't matter since we never error, but it must implement `Display`
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -79,26 +113,29 @@ fn print_row<'a>(
 ) -> anyhow::Result<()> {
     for input in inputs {
         if bidirectional.contains(&input.name) {
-            if input.value == InputValue::Z {
-                writeln!(out, "    \\{}_reg = {};", input.name, "1'bZ")?;
-            } else {
-                writeln!(out, "    \\{}_reg = {};", input.name, input.value)?;
-            }
+            writeln!(
+                out,
+                "    \\{}_reg = {};",
+                input.name,
+                VerilogValue::from(input.value)
+            )?;
         } else {
-            if input.value == InputValue::Z {
-                writeln!(out, "    \\{} = {};", input.name, "1'bZ")?;
-            } else {
-                writeln!(out, "    \\{} = {};", input.name, input.value)?;
-            }
+            writeln!(
+                out,
+                "    \\{} = {};",
+                input.name,
+                VerilogValue::from(input.value)
+            )?;
         }
     }
     writeln!(out, "#{};", delay.0)?;
     for output in outputs {
-        if output.value == OutputValue::Z {
-            writeln!(out, "    `assert_eq(\\{} , {});", output.name, "1'bZ")?;
-        } else {
-            writeln!(out, "    `assert_eq(\\{} , {});", output.name, output.value)?;
-        }
+        writeln!(
+            out,
+            "    `assert_eq(\\{} , {});",
+            output.name,
+            VerilogValue::from(output.value)
+        )?;
     }
     if delay.1 > 0 {
         writeln!(out, "#{};", delay.1)?;
