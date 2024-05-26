@@ -181,4 +181,33 @@ mod tests {
 
         dir.delete();
     }
+
+    #[test]
+    fn test_74779_runs() {
+        let dir = util::TempDir::create("test_74779_runs");
+
+        let file = dir.file("74779.v");
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+        cmd.args([
+            concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/74779.dig"),
+            "-o",
+        ])
+        .arg(&file)
+        .assert()
+        .success();
+
+        assert!(file.exists());
+
+        let exec_file = dir.file("out");
+
+        let mut iverilog = iverilog_command(&["74779.v", "74779_scaffold.v"], &[&file], &exec_file);
+        iverilog.assert().success();
+
+        assert!(exec_file.exists());
+
+        let mut cmd = Command::new(&exec_file);
+        cmd.assert().success().stdout("All tests passed.\n");
+
+        dir.delete();
+    }
 }

@@ -74,14 +74,31 @@ fn print_row<'a>(
     out: &mut Box<dyn std::io::Write>,
     inputs: impl Iterator<Item = DataEntry<'a, InputValue>>,
     outputs: impl Iterator<Item = DataEntry<'a, OutputValue>>,
+    bidirectional: &[&str],
     delay: (u32, u32),
 ) -> anyhow::Result<()> {
     for input in inputs {
-        writeln!(out, "    \\{} = {};", input.name, input.value)?;
+        if bidirectional.contains(&input.name) {
+            if input.value == InputValue::Z {
+                writeln!(out, "    \\{}_reg = {};", input.name, "1'bZ")?;
+            } else {
+                writeln!(out, "    \\{}_reg = {};", input.name, input.value)?;
+            }
+        } else {
+            if input.value == InputValue::Z {
+                writeln!(out, "    \\{} = {};", input.name, "1'bZ")?;
+            } else {
+                writeln!(out, "    \\{} = {};", input.name, input.value)?;
+            }
+        }
     }
     writeln!(out, "#{};", delay.0)?;
     for output in outputs {
-        writeln!(out, "    `assert_eq(\\{} , {});", output.name, output.value)?;
+        if output.value == OutputValue::Z {
+            writeln!(out, "    `assert_eq(\\{} , {});", output.name, "1'bZ")?;
+        } else {
+            writeln!(out, "    `assert_eq(\\{} , {});", output.name, output.value)?;
+        }
     }
     if delay.1 > 0 {
         writeln!(out, "#{};", delay.1)?;
@@ -154,30 +171,81 @@ fn main() -> anyhow::Result<()> {
     )?;
     writeln!(out,)?;
 
+    let bidirectional: Vec<&str> = {
+        let outputs: Vec<_> = test_case
+            .signals
+            .iter()
+            .filter_map(|sig| {
+                if sig.is_output() {
+                    Some(&sig.name)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        test_case
+            .signals
+            .iter()
+            .filter_map(|sig| {
+                if sig.is_input() && outputs.contains(&&sig.name) {
+                    Some(sig.name.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect()
+    };
+
     let ports = test_case
         .signals
         .iter()
-        .map(|sig| {
+        .filter_map(|sig| {
             let io_type = match sig.dir {
-                SignalDirection::Input { .. } => "output reg",
-                SignalDirection::Output => "input",
+                SignalDirection::Input { .. } => {
+                    if bidirectional.contains(&sig.name.as_str()) {
+                        "inout"
+                    } else {
+                        "output reg"
+                    }
+                }
+                SignalDirection::Output => {
+                    if bidirectional.contains(&sig.name.as_str()) {
+                        return None;
+                    } else {
+                        "input"
+                    }
+                }
             };
             let width = if sig.bits > 1 {
                 format!("[{}:0]", sig.bits - 1)
             } else {
                 String::from("")
             };
-            format!("    {io_type} {width} \\{} ", sig.name)
+            Some(format!("    {io_type} {width} \\{} ", sig.name))
         })
         .collect::<Vec<_>>()
         .join(",\n");
     writeln!(out, "module tb (\n{ports}\n);")?;
     writeln!(out, "integer error_count = 0;")?;
+    for name in &bidirectional {
+        writeln!(out, "reg \\{name}_reg = 1'bZ;")?;
+    }
+
+    for name in &bidirectional {
+        writeln!(out, "assign \\{name} = \\{name}_reg ;")?;
+    }
     writeln!(out, "initial begin")?;
 
     if cli.default {
         let row = test_case.default_row();
-        print_row(&mut out, row.inputs(), row.checked_outputs(), cli.delay)?;
+        print_row(
+            &mut out,
+            row.inputs(),
+            row.checked_outputs(),
+            &bidirectional,
+            cli.delay,
+        )?;
     }
 
     for row in test_case.iter() {
@@ -185,6 +253,7 @@ fn main() -> anyhow::Result<()> {
             &mut out,
             row.changed_inputs(),
             row.checked_outputs(),
+            &bidirectional,
             cli.delay,
         )?;
     }
