@@ -298,7 +298,7 @@ fn main() -> anyhow::Result<()> {
     for name in &bidirectional {
         writeln!(
             out,
-            "reg {}= 1'bZ;",
+            "reg {}= 'Z;",
             VerilogIdentifier::with_suffix(name, "_reg")
         )?;
     }
