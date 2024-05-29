@@ -1,6 +1,6 @@
 use digital_test_runner::{dig, DataEntry, InputValue, OutputValue, SignalDirection, TestCase};
 
-use std::{borrow::Cow, path::PathBuf};
+use std::path::PathBuf;
 
 use clap::Parser;
 
@@ -32,7 +32,7 @@ enum VerilogValue {
 }
 
 struct VerilogIdentifier<'a> {
-    identifier: Cow<'a, str>,
+    identifier: &'a str,
     suffix: Option<&'a str>,
 }
 
@@ -49,7 +49,16 @@ impl From<OutputValue> for VerilogValue {
 impl<'a> From<&'a str> for VerilogIdentifier<'a> {
     fn from(value: &'a str) -> Self {
         VerilogIdentifier {
-            identifier: value.into(),
+            identifier: value,
+            suffix: None,
+        }
+    }
+}
+
+impl<'a> From<&'a String> for VerilogIdentifier<'a> {
+    fn from(value: &'a String) -> Self {
+        VerilogIdentifier {
+            identifier: value.as_str(),
             suffix: None,
         }
     }
@@ -58,7 +67,7 @@ impl<'a> From<&'a str> for VerilogIdentifier<'a> {
 impl<'a> VerilogIdentifier<'a> {
     fn with_suffix(identifier: &'a str, suffix: &'a str) -> Self {
         Self {
-            identifier: Cow::Borrowed(identifier),
+            identifier,
             suffix: Some(suffix),
         }
     }
@@ -290,7 +299,7 @@ fn main() -> anyhow::Result<()> {
             };
             Some(format!(
                 "    {io_type} {width} {}",
-                VerilogIdentifier::from(sig.name.as_str()),
+                VerilogIdentifier::from(&sig.name),
             ))
         })
         .collect::<Vec<_>>()
