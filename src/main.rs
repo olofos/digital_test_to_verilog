@@ -150,30 +150,19 @@ fn print_row<'a>(
     delay: (u32, u32),
 ) -> anyhow::Result<()> {
     for input in inputs {
-        if bidirectional.contains(&input.name) {
-            writeln!(
-                out,
-                "    {}= {};",
-                VerilogIdentifier::with_suffix(input.name, "_reg"),
-                VerilogValue::from(input.value)
-            )?;
+        let identifier = if bidirectional.contains(&input.name) {
+            VerilogIdentifier::with_suffix(input.name, "_reg")
         } else {
-            writeln!(
-                out,
-                "    {}= {};",
-                VerilogIdentifier::from(input.name),
-                VerilogValue::from(input.value)
-            )?;
-        }
+            VerilogIdentifier::from(input.name)
+        };
+        let value = VerilogValue::from(input.value);
+        writeln!(out, "    {identifier}= {value};",)?;
     }
     writeln!(out, "#{};", delay.0)?;
     for output in outputs {
-        writeln!(
-            out,
-            "    `assert_eq({}, {});",
-            VerilogIdentifier::from(output.name),
-            VerilogValue::from(output.value)
-        )?;
+        let identifier = VerilogIdentifier::from(output.name);
+        let value = VerilogValue::from(output.value);
+        writeln!(out, "    `assert_eq({identifier}, {value});",)?;
     }
     if delay.1 > 0 {
         writeln!(out, "#{};", delay.1)?;
