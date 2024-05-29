@@ -1,6 +1,6 @@
 use digital_test_runner::{dig, DataEntry, InputValue, OutputValue, SignalDirection, TestCase};
 
-use std::path::PathBuf;
+use std::{borrow::Cow, path::PathBuf};
 
 use clap::Parser;
 
@@ -31,12 +31,35 @@ enum VerilogValue {
     Z,
 }
 
+struct VerilogIdentifier<'a> {
+    identifier: Cow<'a, str>,
+    suffix: Option<&'a str>,
+}
+
 impl From<OutputValue> for VerilogValue {
     fn from(value: OutputValue) -> Self {
         match value {
             OutputValue::Value(num) => VerilogValue::Value(num),
             OutputValue::Z => VerilogValue::Z,
             OutputValue::X => panic!("Unexpected X output value"),
+        }
+    }
+}
+
+impl<'a> From<&'a str> for VerilogIdentifier<'a> {
+    fn from(value: &'a str) -> Self {
+        VerilogIdentifier {
+            identifier: value.into(),
+            suffix: None,
+        }
+    }
+}
+
+impl<'a> VerilogIdentifier<'a> {
+    fn with_suffix(identifier: &'a str, suffix: &'a str) -> Self {
+        Self {
+            identifier: Cow::Borrowed(identifier),
+            suffix: Some(suffix),
         }
     }
 }
@@ -56,6 +79,12 @@ impl std::fmt::Display for VerilogValue {
             VerilogValue::Value(num) => write!(f, "{num}"),
             VerilogValue::Z => write!(f, "'Z"),
         }
+    }
+}
+
+impl<'a> std::fmt::Display for VerilogIdentifier<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "\\{}{} ", self.identifier, self.suffix.unwrap_or(""))
     }
 }
 
@@ -115,15 +144,15 @@ fn print_row<'a>(
         if bidirectional.contains(&input.name) {
             writeln!(
                 out,
-                "    \\{}_reg = {};",
-                input.name,
+                "    {}= {};",
+                VerilogIdentifier::with_suffix(input.name, "_reg"),
                 VerilogValue::from(input.value)
             )?;
         } else {
             writeln!(
                 out,
-                "    \\{} = {};",
-                input.name,
+                "    {}= {};",
+                VerilogIdentifier::from(input.name),
                 VerilogValue::from(input.value)
             )?;
         }
@@ -132,8 +161,8 @@ fn print_row<'a>(
     for output in outputs {
         writeln!(
             out,
-            "    `assert_eq(\\{} , {});",
-            output.name,
+            "    `assert_eq({}, {});",
+            VerilogIdentifier::from(output.name),
             VerilogValue::from(output.value)
         )?;
     }
@@ -259,18 +288,30 @@ fn main() -> anyhow::Result<()> {
             } else {
                 String::from("")
             };
-            Some(format!("    {io_type} {width} \\{} ", sig.name))
+            Some(format!(
+                "    {io_type} {width} {}",
+                VerilogIdentifier::from(sig.name.as_str()),
+            ))
         })
         .collect::<Vec<_>>()
         .join(",\n");
     writeln!(out, "module tb (\n{ports}\n);")?;
     writeln!(out, "integer error_count = 0;")?;
     for name in &bidirectional {
-        writeln!(out, "reg \\{name}_reg = 1'bZ;")?;
+        writeln!(
+            out,
+            "reg {}= 1'bZ;",
+            VerilogIdentifier::with_suffix(name, "_reg")
+        )?;
     }
 
     for name in &bidirectional {
-        writeln!(out, "assign \\{name} = \\{name}_reg ;")?;
+        writeln!(
+            out,
+            "assign {}= {};",
+            VerilogIdentifier::from(*name),
+            VerilogIdentifier::with_suffix(name, "_reg")
+        )?;
     }
     writeln!(out, "initial begin")?;
 
