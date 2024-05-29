@@ -4,6 +4,8 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
+const REG_SUFFIX: &str = "_reg";
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum TestCaseSelector {
     Number(usize),
@@ -151,7 +153,7 @@ fn print_row<'a>(
 ) -> anyhow::Result<()> {
     for input in inputs {
         let identifier = if bidirectional.contains(&input.name) {
-            VerilogIdentifier::with_suffix(input.name, "_reg")
+            VerilogIdentifier::with_suffix(input.name, REG_SUFFIX)
         } else {
             VerilogIdentifier::from(input.name)
         };
@@ -299,7 +301,7 @@ fn main() -> anyhow::Result<()> {
         writeln!(
             out,
             "reg {}= {};",
-            VerilogIdentifier::with_suffix(name, "_reg"),
+            VerilogIdentifier::with_suffix(name, REG_SUFFIX),
             VerilogValue::from(InputValue::Z)
         )?;
     }
@@ -309,7 +311,7 @@ fn main() -> anyhow::Result<()> {
             out,
             "assign {}= {};",
             VerilogIdentifier::from(*name),
-            VerilogIdentifier::with_suffix(name, "_reg")
+            VerilogIdentifier::with_suffix(name, REG_SUFFIX)
         )?;
     }
     writeln!(out, "initial begin")?;
