@@ -159,12 +159,11 @@ fn print_row<'a>(
     out: &mut Box<dyn std::io::Write>,
     inputs: impl Iterator<Item = DataEntry<'a, InputValue>>,
     outputs: impl Iterator<Item = DataEntry<'a, OutputValue>>,
-    bidirectional: &[&str],
     delay: (u32, u32),
 ) -> anyhow::Result<()> {
     for input in inputs {
         let name = input.signal.name.as_str();
-        let identifier = if bidirectional.contains(&name) {
+        let identifier = if matches!(input.signal.dir, SignalDirection::BidirectionalInput { .. }) {
             VerilogIdentifier::with_suffix(name, REG_SUFFIX)
         } else {
             VerilogIdentifier::from(name)
@@ -249,52 +248,15 @@ fn main() -> anyhow::Result<()> {
     )?;
     writeln!(out,)?;
 
-    let bidirectional: Vec<&str> = {
-        let outputs: Vec<_> = test_case
-            .signals
-            .iter()
-            .filter_map(|sig| {
-                if sig.is_output() {
-                    Some(&sig.name)
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        test_case
-            .signals
-            .iter()
-            .filter_map(|sig| {
-                if sig.is_input() && outputs.contains(&&sig.name) {
-                    Some(sig.name.as_str())
-                } else {
-                    None
-                }
-            })
-            .collect()
-    };
-
     let ports = test_case
         .signals
         .iter()
         .filter_map(|sig| {
             let io_type = match sig.dir {
-                SignalDirection::Input { .. } => {
-                    if bidirectional.contains(&sig.name.as_str()) {
-                        "inout"
-                    } else {
-                        "output reg"
-                    }
-                }
-                // SignalDirection::Bidirectional { .. } => "inout",
-                SignalDirection::Output => {
-                    if bidirectional.contains(&sig.name.as_str()) {
-                        return None;
-                    } else {
-                        "input"
-                    }
-                }
+                SignalDirection::Input { .. } => "output reg",
+                SignalDirection::Output => "input",
+                SignalDirection::BidirectionalInput { .. } => "inout",
+                SignalDirection::BidirectionalOutput => return None,
             };
             let width = if sig.bits > 1 {
                 format!("[{}:0]", sig.bits - 1)
@@ -310,34 +272,35 @@ fn main() -> anyhow::Result<()> {
         .join(",\n");
     writeln!(out, "module tb (\n{ports}\n);")?;
     writeln!(out, "integer error_count = 0;")?;
-    for name in &bidirectional {
-        writeln!(
-            out,
-            "reg {}= {};",
-            VerilogIdentifier::with_suffix(name, REG_SUFFIX),
-            VerilogValue::from(InputValue::Z)
-        )?;
+
+    for sig in &test_case.signals {
+        if sig.is_bidirectional() && sig.is_input() {
+            let name = sig.name.as_str();
+            writeln!(
+                out,
+                "reg {}= {};",
+                VerilogIdentifier::with_suffix(name, REG_SUFFIX),
+                VerilogValue::from(InputValue::Z)
+            )?;
+        }
     }
 
-    for name in &bidirectional {
-        writeln!(
-            out,
-            "assign {}= {};",
-            VerilogIdentifier::from(*name),
-            VerilogIdentifier::with_suffix(name, REG_SUFFIX)
-        )?;
+    for sig in &test_case.signals {
+        if sig.is_bidirectional() && sig.is_input() {
+            let name = sig.name.as_str();
+            writeln!(
+                out,
+                "assign {}= {};",
+                VerilogIdentifier::from(name),
+                VerilogIdentifier::with_suffix(name, REG_SUFFIX)
+            )?;
+        }
     }
     writeln!(out, "initial begin")?;
 
     if cli.default {
         let row = test_case.default_row();
-        print_row(
-            &mut out,
-            row.inputs(),
-            row.checked_outputs(),
-            &bidirectional,
-            cli.delay,
-        )?;
+        print_row(&mut out, row.inputs(), row.checked_outputs(), cli.delay)?;
     }
 
     for row in test_case.iter() {
@@ -345,7 +308,6 @@ fn main() -> anyhow::Result<()> {
             &mut out,
             row.changed_inputs(),
             row.checked_outputs(),
-            &bidirectional,
             cli.delay,
         )?;
     }
