@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <circuit>
-  <version>2</version>
+  <version>1</version>
   <attributes>
     <entry>
       <string>shapeType</string>
@@ -15,10 +15,8 @@
       <string>8-Bit Bidirectional Binary Counter with 3-STATE Outputs</string>
     </entry>
     <entry>
-      <string>romContent</string>
-      <romList>
-        <roms/>
-      </romList>
+      <string>lockedMode</string>
+      <boolean>true</boolean>
     </entry>
     <entry>
       <string>Width</string>
@@ -442,7 +440,7 @@
           <value v="1" z="false"/>
         </entry>
       </elementAttributes>
-      <pos x="-580" y="1680"/>
+      <pos x="-580" y="1560"/>
     </visualElement>
     <visualElement>
       <elementName>Out</elementName>
@@ -461,7 +459,7 @@
     <visualElement>
       <elementName>Not</elementName>
       <elementAttributes/>
-      <pos x="-480" y="1680"/>
+      <pos x="-480" y="1560"/>
     </visualElement>
     <visualElement>
       <elementName>Not</elementName>
@@ -998,118 +996,6 @@ end loop
       <elementAttributes/>
       <pos x="980" y="1440"/>
     </visualElement>
-    <visualElement>
-      <elementName>Out</elementName>
-      <elementAttributes>
-        <entry>
-          <string>rotation</string>
-          <rotation rotation="3"/>
-        </entry>
-        <entry>
-          <string>Label</string>
-          <string>I/O0_outx</string>
-        </entry>
-      </elementAttributes>
-      <pos x="-540" y="-760"/>
-    </visualElement>
-    <visualElement>
-      <elementName>Out</elementName>
-      <elementAttributes>
-        <entry>
-          <string>rotation</string>
-          <rotation rotation="3"/>
-        </entry>
-        <entry>
-          <string>Label</string>
-          <string>I/O1_outx</string>
-        </entry>
-      </elementAttributes>
-      <pos x="-540" y="-520"/>
-    </visualElement>
-    <visualElement>
-      <elementName>Out</elementName>
-      <elementAttributes>
-        <entry>
-          <string>rotation</string>
-          <rotation rotation="3"/>
-        </entry>
-        <entry>
-          <string>Label</string>
-          <string>I/O2_outx</string>
-        </entry>
-      </elementAttributes>
-      <pos x="-540" y="-280"/>
-    </visualElement>
-    <visualElement>
-      <elementName>Out</elementName>
-      <elementAttributes>
-        <entry>
-          <string>rotation</string>
-          <rotation rotation="3"/>
-        </entry>
-        <entry>
-          <string>Label</string>
-          <string>I/O3_outx</string>
-        </entry>
-      </elementAttributes>
-      <pos x="-540" y="-40"/>
-    </visualElement>
-    <visualElement>
-      <elementName>Out</elementName>
-      <elementAttributes>
-        <entry>
-          <string>rotation</string>
-          <rotation rotation="3"/>
-        </entry>
-        <entry>
-          <string>Label</string>
-          <string>I/O4_outx</string>
-        </entry>
-      </elementAttributes>
-      <pos x="-540" y="260"/>
-    </visualElement>
-    <visualElement>
-      <elementName>Out</elementName>
-      <elementAttributes>
-        <entry>
-          <string>rotation</string>
-          <rotation rotation="3"/>
-        </entry>
-        <entry>
-          <string>Label</string>
-          <string>I/O5_outx</string>
-        </entry>
-      </elementAttributes>
-      <pos x="-540" y="640"/>
-    </visualElement>
-    <visualElement>
-      <elementName>Out</elementName>
-      <elementAttributes>
-        <entry>
-          <string>rotation</string>
-          <rotation rotation="3"/>
-        </entry>
-        <entry>
-          <string>Label</string>
-          <string>I/O6_outx</string>
-        </entry>
-      </elementAttributes>
-      <pos x="-540" y="1080"/>
-    </visualElement>
-    <visualElement>
-      <elementName>Out</elementName>
-      <elementAttributes>
-        <entry>
-          <string>rotation</string>
-          <rotation rotation="3"/>
-        </entry>
-        <entry>
-          <string>Label</string>
-          <string>I/O7_outx</string>
-        </entry>
-      </elementAttributes>
-      <pos x="-540" y="1500"/>
-    </visualElement>
   </visualElements>
   <wires>
     <wire>
@@ -1189,7 +1075,7 @@ end loop
       <p2 x="980" y="-780"/>
     </wire>
     <wire>
-      <p1 x="-540" y="-780"/>
+      <p1 x="-560" y="-780"/>
       <p2 x="-500" y="-780"/>
     </wire>
     <wire>
@@ -1261,7 +1147,11 @@ end loop
       <p2 x="440" y="280"/>
     </wire>
     <wire>
-      <p1 x="-380" y="1560"/>
+      <p1 x="-580" y="1560"/>
+      <p2 x="-480" y="1560"/>
+    </wire>
+    <wire>
+      <p1 x="-440" y="1560"/>
       <p2 x="-320" y="1560"/>
     </wire>
     <wire>
@@ -1289,12 +1179,12 @@ end loop
       <p2 x="980" y="-540"/>
     </wire>
     <wire>
-      <p1 x="-540" y="-540"/>
-      <p2 x="-500" y="-540"/>
-    </wire>
-    <wire>
       <p1 x="-260" y="-540"/>
       <p2 x="920" y="-540"/>
+    </wire>
+    <wire>
+      <p1 x="-560" y="-540"/>
+      <p2 x="-500" y="-540"/>
     </wire>
     <wire>
       <p1 x="660" y="540"/>
@@ -1337,12 +1227,12 @@ end loop
       <p2 x="980" y="1060"/>
     </wire>
     <wire>
-      <p1 x="-540" y="1060"/>
-      <p2 x="-500" y="1060"/>
-    </wire>
-    <wire>
       <p1 x="-160" y="1060"/>
       <p2 x="920" y="1060"/>
+    </wire>
+    <wire>
+      <p1 x="-560" y="1060"/>
+      <p2 x="-500" y="1060"/>
     </wire>
     <wire>
       <p1 x="200" y="-40"/>
@@ -1385,12 +1275,12 @@ end loop
       <p2 x="980" y="-300"/>
     </wire>
     <wire>
-      <p1 x="-540" y="-300"/>
-      <p2 x="-500" y="-300"/>
-    </wire>
-    <wire>
       <p1 x="-240" y="-300"/>
       <p2 x="920" y="-300"/>
+    </wire>
+    <wire>
+      <p1 x="-560" y="-300"/>
+      <p2 x="-500" y="-300"/>
     </wire>
     <wire>
       <p1 x="920" y="300"/>
@@ -1469,7 +1359,7 @@ end loop
       <p2 x="980" y="-60"/>
     </wire>
     <wire>
-      <p1 x="-540" y="-60"/>
+      <p1 x="-560" y="-60"/>
       <p2 x="-500" y="-60"/>
     </wire>
     <wire>
@@ -1689,12 +1579,12 @@ end loop
       <p2 x="980" y="620"/>
     </wire>
     <wire>
-      <p1 x="-540" y="620"/>
-      <p2 x="-500" y="620"/>
-    </wire>
-    <wire>
       <p1 x="-180" y="620"/>
       <p2 x="920" y="620"/>
+    </wire>
+    <wire>
+      <p1 x="-560" y="620"/>
+      <p2 x="-500" y="620"/>
     </wire>
     <wire>
       <p1 x="-580" y="-880"/>
@@ -1809,8 +1699,8 @@ end loop
       <p2 x="780" y="-400"/>
     </wire>
     <wire>
-      <p1 x="-580" y="1680"/>
-      <p2 x="-480" y="1680"/>
+      <p1 x="140" y="400"/>
+      <p2 x="440" y="400"/>
     </wire>
     <wire>
       <p1 x="140" y="1680"/>
@@ -1827,14 +1717,6 @@ end loop
     <wire>
       <p1 x="-220" y="1680"/>
       <p2 x="-180" y="1680"/>
-    </wire>
-    <wire>
-      <p1 x="-440" y="1680"/>
-      <p2 x="-380" y="1680"/>
-    </wire>
-    <wire>
-      <p1 x="140" y="400"/>
-      <p2 x="440" y="400"/>
     </wire>
     <wire>
       <p1 x="-320" y="-660"/>
@@ -2077,7 +1959,7 @@ end loop
       <p2 x="980" y="1480"/>
     </wire>
     <wire>
-      <p1 x="-540" y="1480"/>
+      <p1 x="-560" y="1480"/>
       <p2 x="-500" y="1480"/>
     </wire>
     <wire>
@@ -2253,7 +2135,7 @@ end loop
       <p2 x="980" y="240"/>
     </wire>
     <wire>
-      <p1 x="-540" y="240"/>
+      <p1 x="-560" y="240"/>
       <p2 x="-500" y="240"/>
     </wire>
     <wire>
@@ -2701,38 +2583,6 @@ end loop
       <p2 x="-220" y="1320"/>
     </wire>
     <wire>
-      <p1 x="-540" y="-780"/>
-      <p2 x="-540" y="-760"/>
-    </wire>
-    <wire>
-      <p1 x="-540" y="-540"/>
-      <p2 x="-540" y="-520"/>
-    </wire>
-    <wire>
-      <p1 x="-540" y="1480"/>
-      <p2 x="-540" y="1500"/>
-    </wire>
-    <wire>
-      <p1 x="-540" y="1060"/>
-      <p2 x="-540" y="1080"/>
-    </wire>
-    <wire>
-      <p1 x="-540" y="620"/>
-      <p2 x="-540" y="640"/>
-    </wire>
-    <wire>
-      <p1 x="-540" y="240"/>
-      <p2 x="-540" y="260"/>
-    </wire>
-    <wire>
-      <p1 x="-540" y="-60"/>
-      <p2 x="-540" y="-40"/>
-    </wire>
-    <wire>
-      <p1 x="-540" y="-300"/>
-      <p2 x="-540" y="-280"/>
-    </wire>
-    <wire>
       <p1 x="220" y="260"/>
       <p2 x="220" y="300"/>
     </wire>
@@ -3135,10 +2985,6 @@ end loop
     <wire>
       <p1 x="120" y="-700"/>
       <p2 x="120" y="-420"/>
-    </wire>
-    <wire>
-      <p1 x="-380" y="1560"/>
-      <p2 x="-380" y="1680"/>
     </wire>
     <wire>
       <p1 x="-380" y="-880"/>
