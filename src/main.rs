@@ -1,4 +1,6 @@
-use digital_test_runner::{dig, DataEntry, InputValue, OutputValue, SignalDirection, TestCase};
+use digital_test_runner::{
+    dig, DataEntry, InputValue, OutputValue, Signal, SignalDirection, TestCase,
+};
 
 use std::path::PathBuf;
 
@@ -61,6 +63,15 @@ impl<'a> From<&'a String> for VerilogIdentifier<'a> {
     fn from(value: &'a String) -> Self {
         VerilogIdentifier {
             identifier: value.as_str(),
+            suffix: None,
+        }
+    }
+}
+
+impl<'a> From<&'a Signal> for VerilogIdentifier<'a> {
+    fn from(signal: &'a Signal) -> Self {
+        VerilogIdentifier {
+            identifier: signal.name.as_str(),
             suffix: None,
         }
     }
@@ -152,17 +163,18 @@ fn print_row<'a>(
     delay: (u32, u32),
 ) -> anyhow::Result<()> {
     for input in inputs {
-        let identifier = if bidirectional.contains(&input.name) {
-            VerilogIdentifier::with_suffix(input.name, REG_SUFFIX)
+        let name = input.signal.name.as_str();
+        let identifier = if bidirectional.contains(&name) {
+            VerilogIdentifier::with_suffix(name, REG_SUFFIX)
         } else {
-            VerilogIdentifier::from(input.name)
+            VerilogIdentifier::from(name)
         };
         let value = VerilogValue::from(input.value);
         writeln!(out, "    {identifier}= {value};",)?;
     }
     writeln!(out, "#{};", delay.0)?;
     for output in outputs {
-        let identifier = VerilogIdentifier::from(output.name);
+        let identifier = VerilogIdentifier::from(output.signal);
         let value = VerilogValue::from(output.value);
         writeln!(out, "    `assert_eq({identifier}, {value});",)?;
     }
@@ -275,6 +287,7 @@ fn main() -> anyhow::Result<()> {
                         "output reg"
                     }
                 }
+                // SignalDirection::Bidirectional { .. } => "inout",
                 SignalDirection::Output => {
                     if bidirectional.contains(&sig.name.as_str()) {
                         return None;
