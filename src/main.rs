@@ -84,6 +84,15 @@ impl<'a> VerilogIdentifier<'a> {
             suffix: Some(suffix),
         }
     }
+
+    fn from_input(signal: &'a Signal) -> Self {
+        let name = signal.name.as_str();
+        if signal.is_bidirectional() {
+            VerilogIdentifier::with_suffix(name, REG_SUFFIX)
+        } else {
+            VerilogIdentifier::from(name)
+        }
+    }
 }
 
 impl From<InputValue> for VerilogValue {
@@ -162,12 +171,7 @@ fn print_row<'a>(
     delay: (u32, u32),
 ) -> anyhow::Result<()> {
     for input in inputs {
-        let name = input.signal.name.as_str();
-        let identifier = if input.signal.is_bidirectional() {
-            VerilogIdentifier::with_suffix(name, REG_SUFFIX)
-        } else {
-            VerilogIdentifier::from(name)
-        };
+        let identifier = VerilogIdentifier::from_input(input.signal);
         let value = VerilogValue::from(input.value);
         writeln!(out, "    {identifier}= {value};",)?;
     }
@@ -262,10 +266,7 @@ fn main() -> anyhow::Result<()> {
             } else {
                 String::from("")
             };
-            format!(
-                "    {io_type} {width} {}",
-                VerilogIdentifier::from(&sig.name),
-            )
+            format!("    {io_type} {width} {}", VerilogIdentifier::from(sig),)
         })
         .collect::<Vec<_>>()
         .join(",\n");
@@ -274,11 +275,10 @@ fn main() -> anyhow::Result<()> {
 
     for sig in &test_case.signals {
         if sig.is_bidirectional() {
-            let name = sig.name.as_str();
             writeln!(
                 out,
                 "reg {}= {};",
-                VerilogIdentifier::with_suffix(name, REG_SUFFIX),
+                VerilogIdentifier::from_input(sig),
                 VerilogValue::from(InputValue::Z)
             )?;
         }
@@ -286,12 +286,11 @@ fn main() -> anyhow::Result<()> {
 
     for sig in &test_case.signals {
         if sig.is_bidirectional() {
-            let name = sig.name.as_str();
             writeln!(
                 out,
                 "assign {}= {};",
-                VerilogIdentifier::from(name),
-                VerilogIdentifier::with_suffix(name, REG_SUFFIX)
+                VerilogIdentifier::from(sig),
+                VerilogIdentifier::from_input(sig)
             )?;
         }
     }
