@@ -251,7 +251,7 @@ fn main() -> anyhow::Result<()> {
     let ports = test_case
         .signals
         .iter()
-        .filter_map(|sig| {
+        .map(|sig| {
             let io_type = match sig.dir {
                 SignalDirection::Input { .. } => "output reg",
                 SignalDirection::Output => "input",
@@ -262,10 +262,10 @@ fn main() -> anyhow::Result<()> {
             } else {
                 String::from("")
             };
-            Some(format!(
+            format!(
                 "    {io_type} {width} {}",
                 VerilogIdentifier::from(&sig.name),
-            ))
+            )
         })
         .collect::<Vec<_>>()
         .join(",\n");
