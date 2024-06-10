@@ -170,11 +170,11 @@ fn main() -> anyhow::Result<()> {
                 SignalDirection::Bidirectional { .. } => "inout",
             };
             let width = if sig.bits > 1 {
-                format!("[{}:0]", sig.bits - 1)
+                format!("[{}:0] ", sig.bits - 1)
             } else {
                 String::from("")
             };
-            format!("    {io_type} {width} {}", VerilogIdentifier::from(sig),)
+            format!("    {io_type} {width}{}", VerilogIdentifier::from(sig),)
         })
         .collect::<Vec<_>>()
         .join(",\n");

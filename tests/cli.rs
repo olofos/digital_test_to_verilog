@@ -20,7 +20,7 @@ module tb (
     output reg [7:0] A,
     output reg [7:0] B,
     input [7:0] \|S| ,
-    input  C
+    input C
 );
 integer error_count = 0;
 initial begin{default}
