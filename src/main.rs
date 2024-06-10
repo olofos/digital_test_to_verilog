@@ -163,7 +163,7 @@ fn print_row<'a>(
 ) -> anyhow::Result<()> {
     for input in inputs {
         let name = input.signal.name.as_str();
-        let identifier = if matches!(input.signal.dir, SignalDirection::BidirectionalInput { .. }) {
+        let identifier = if input.signal.is_bidirectional() {
             VerilogIdentifier::with_suffix(name, REG_SUFFIX)
         } else {
             VerilogIdentifier::from(name)
@@ -255,8 +255,7 @@ fn main() -> anyhow::Result<()> {
             let io_type = match sig.dir {
                 SignalDirection::Input { .. } => "output reg",
                 SignalDirection::Output => "input",
-                SignalDirection::BidirectionalInput { .. } => "inout",
-                SignalDirection::BidirectionalOutput => return None,
+                SignalDirection::Bidirectional { .. } => "inout",
             };
             let width = if sig.bits > 1 {
                 format!("[{}:0]", sig.bits - 1)
@@ -274,7 +273,7 @@ fn main() -> anyhow::Result<()> {
     writeln!(out, "integer error_count = 0;")?;
 
     for sig in &test_case.signals {
-        if sig.is_bidirectional() && sig.is_input() {
+        if sig.is_bidirectional() {
             let name = sig.name.as_str();
             writeln!(
                 out,
@@ -286,7 +285,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     for sig in &test_case.signals {
-        if sig.is_bidirectional() && sig.is_input() {
+        if sig.is_bidirectional() {
             let name = sig.name.as_str();
             writeln!(
                 out,
