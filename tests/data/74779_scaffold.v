@@ -36,19 +36,21 @@ module scaffold ();
   );
 
   tb tb0 (
-      S1,
-      S0,
-      \~CET ,
-      \~OE ,
       CP,
-      InotO7,
-      InotO6,
-      InotO5,
-      InotO4,
-      InotO3,
-      InotO2,
-      InotO1,
+      S0,
+      S1,
+      \~OE ,
       InotO0,
+      InotO1,
+      InotO2,
+      InotO3,
+      InotO4,
+      InotO5,
+      InotO6,
+      InotO7,
+      \~CET ,
+      VCC,
+      GND,
       \~TC
   );
 

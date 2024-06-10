@@ -8,8 +8,8 @@ module scaffold;
   wire B;
   wire C;
   wire D;
-  reg  VCC = 1;
-  reg  GND = 0;
+  wire VCC;
+  wire GND;
   wire RCO;
   wire QA;
   wire QB;
@@ -35,18 +35,21 @@ module scaffold;
       QD
   );
   tb tb (
-      CLK,
-      \~CLR ,
       \~LD ,
+      \~CLR ,
+      CLK,
       ENT,
       ENP,
-      D,
-      C,
-      B,
       A,
-      QD,
-      QC,
+      B,
+      C,
+      D,
+      VCC,
+      GND,
+      RCO,
+      QA,
       QB,
-      QA
+      QC,
+      QD
   );
 endmodule

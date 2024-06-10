@@ -129,7 +129,7 @@ mod tests {
     #[case("A minus B minus 1 (A0110)")]
     #[case("(A AND !B) minus 1 (A0111)")]
     #[case("A plus (A AND B) (A1000)")]
-    // Skip case #[case("A plus B (A1001)")]
+    #[case("A plus B (A1001)")]
     #[case("(A OR !B) plus (A AND B) (A1010)")]
     #[case("(A AND B) minus 1 (A1011)")]
     #[case("A plus A (A1100)")]
