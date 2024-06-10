@@ -18,7 +18,7 @@
       <elementAttributes>
         <entry>
           <string>Label</string>
-          <string>S</string>
+          <string>|S|</string>
         </entry>
         <entry>
           <string>Bits</string>
@@ -85,7 +85,7 @@
         <entry>
           <string>Testdata</string>
           <testData>
-            <dataString>A B S C
+            <dataString>A B |S| C
 1 1 2 X
 </dataString>
           </testData>
@@ -103,7 +103,7 @@
         <entry>
           <string>Testdata</string>
           <testData>
-            <dataString>A B S C
+            <dataString>A B |S| C
 1 1 3 X
 </dataString>
           </testData>

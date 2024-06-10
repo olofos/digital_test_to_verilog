@@ -188,6 +188,7 @@ dependencies = [
  "assert_cmd",
  "clap",
  "digital_test_runner",
+ "once_cell",
  "rand",
  "regex",
  "rstest",

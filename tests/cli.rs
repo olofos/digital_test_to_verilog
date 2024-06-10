@@ -17,17 +17,17 @@ fn expected_ouput(pre: &str, default: &str, delay1: &str, delay2: &str) -> Strin
     end
 
 module tb (
-    output reg [7:0] \A ,
-    output reg [7:0] \B ,
-    input [7:0] \S ,
-    input  \C 
+    output reg [7:0] A,
+    output reg [7:0] B,
+    input [7:0] \|S| ,
+    input  C
 );
 integer error_count = 0;
 initial begin{default}
-    \A = 1;
-    \B = 1;
+    A = 1;
+    B = 1;
 {delay1}
-    `assert_eq(\S , 2);
+    `assert_eq(\|S| , 2);
 {delay2}
   if(error_count > 0) begin
     $display("There were failed assertions");
@@ -148,8 +148,8 @@ fn delay_works_with_one_number() {
 #[test]
 fn default_works() {
     let default = r#"
-    \A = 0;
-    \B = 0;
+    A = 0;
+    B = 0;
 #10;
 "#;
     let expected_ouput = expected_ouput("", default, "#10;", "");

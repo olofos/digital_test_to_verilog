@@ -81,7 +81,7 @@ fn print_row<'a>(
     for input in inputs {
         let identifier = VerilogIdentifier::from_input(input.signal);
         let value = VerilogValue::from(input.value);
-        writeln!(out, "    {identifier}= {value};",)?;
+        writeln!(out, "    {identifier} = {value};",)?;
     }
     writeln!(out, "#{};", delay.0)?;
     for output in outputs {
@@ -185,7 +185,7 @@ fn main() -> anyhow::Result<()> {
         if sig.is_bidirectional() {
             writeln!(
                 out,
-                "reg {}= {};",
+                "reg {} = {};",
                 VerilogIdentifier::from_input(sig),
                 VerilogValue::from(InputValue::Z)
             )?;
@@ -196,7 +196,7 @@ fn main() -> anyhow::Result<()> {
         if sig.is_bidirectional() {
             writeln!(
                 out,
-                "assign {}= {};",
+                "assign {} = {};",
                 VerilogIdentifier::from(sig),
                 VerilogIdentifier::from_input(sig)
             )?;
