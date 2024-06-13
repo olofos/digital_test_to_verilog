@@ -91,7 +91,7 @@ impl<'a> std::fmt::Display for VerilogIdentifier<'a> {
         static RE: once_cell::sync::Lazy<regex::Regex> =
             once_cell::sync::Lazy::new(|| regex::Regex::new(r"^[a-zA-Z_][a-zA-Z0-9$_]*$").unwrap());
 
-        if RE.is_match(&self.identifier) && self.suffix.map(|s| RE.is_match(s)).unwrap_or(true) {
+        if RE.is_match(self.identifier) && self.suffix.map(|s| RE.is_match(s)).unwrap_or(true) {
             write!(f, "{}{}", self.identifier, self.suffix.unwrap_or(""))
         } else {
             write!(f, "\\{}{} ", self.identifier, self.suffix.unwrap_or(""))
