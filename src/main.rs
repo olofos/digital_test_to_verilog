@@ -1,4 +1,4 @@
-use digital_test_runner::{dig, DataEntry, InputValue, OutputValue, SignalDirection, TestCase};
+use digital_test_runner::{dig, DataEntry, InputValue, OutputValue, SignalDirection};
 use verilog::{VerilogIdentifier, VerilogValue};
 
 use clap::Parser;
@@ -134,7 +134,7 @@ fn main() -> anyhow::Result<()> {
         }
     };
     eprintln!("Loading test case #{test_num}");
-    let test_case = TestCase::try_from_static_dig(&dig_file, test_num)?;
+    let test_case = dig_file.load_test(test_num)?;
 
     let mut out: Box<dyn std::io::Write> = if let Some(path) = cli.output {
         let Ok(file) = std::fs::File::create(&path) else {
@@ -209,7 +209,7 @@ fn main() -> anyhow::Result<()> {
         print_row(&mut out, row.inputs(), row.checked_outputs(), cli.delay)?;
     }
 
-    for row in test_case.iter() {
+    for row in test_case.try_iter()? {
         print_row(
             &mut out,
             row.changed_inputs(),
