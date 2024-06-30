@@ -1,4 +1,4 @@
-use digital_test_runner::{dig, DataEntry, InputValue, OutputValue, SignalDirection};
+use digital_test_runner::{dig, InputEntry, InputValue, OutputEntry, SignalDirection};
 use verilog::{VerilogIdentifier, VerilogValue};
 
 use clap::Parser;
@@ -74,8 +74,8 @@ fn parse_delay(s: &str) -> Result<(u32, u32), String> {
 
 fn print_row<'a>(
     out: &mut Box<dyn std::io::Write>,
-    inputs: impl Iterator<Item = DataEntry<'a, InputValue>>,
-    outputs: impl Iterator<Item = DataEntry<'a, OutputValue>>,
+    inputs: impl Iterator<Item = &'a InputEntry<'a>>,
+    outputs: impl Iterator<Item = &'a OutputEntry<'a>>,
     delay: (u32, u32),
 ) -> anyhow::Result<()> {
     for input in inputs {
@@ -181,7 +181,7 @@ fn main() -> anyhow::Result<()> {
     writeln!(out, "module tb (\n{ports}\n);")?;
     writeln!(out, "integer error_count = 0;")?;
 
-    for sig in &test_case.signals {
+    for sig in test_case.signals {
         if sig.is_bidirectional() {
             writeln!(
                 out,
@@ -192,7 +192,7 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    for sig in &test_case.signals {
+    for sig in test_case.signals {
         if sig.is_bidirectional() {
             writeln!(
                 out,
@@ -206,7 +206,12 @@ fn main() -> anyhow::Result<()> {
 
     if cli.default {
         let row = test_case.default_row();
-        print_row(&mut out, row.inputs(), row.checked_outputs(), cli.delay)?;
+        print_row(
+            &mut out,
+            row.inputs.iter(),
+            row.checked_outputs(),
+            cli.delay,
+        )?;
     }
 
     for row in test_case.try_iter()? {
