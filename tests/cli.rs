@@ -146,26 +146,6 @@ fn delay_works_with_one_number() {
 }
 
 #[test]
-fn default_works() {
-    let default = r#"
-    A = 0;
-    B = 0;
-#10;
-"#;
-    let expected_ouput = expected_ouput("", default, "#10;", "");
-
-    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-    cmd.args([
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/adder.dig"),
-        "0",
-        "--default",
-    ])
-    .assert()
-    .success()
-    .stdout(expected_ouput);
-}
-
-#[test]
 fn output_to_file_works() {
     use std::io::Read;
     let dir = util::TempDir::create("output_to_file_works");

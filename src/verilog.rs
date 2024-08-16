@@ -1,4 +1,4 @@
-use digital_test_runner::{InputValue, OutputValue, Signal};
+use digital_test_runner::{ExpectedValue, InputValue, Signal};
 
 const REG_SUFFIX: &str = "_reg";
 
@@ -13,12 +13,12 @@ pub(crate) struct VerilogIdentifier<'a> {
     suffix: Option<&'a str>,
 }
 
-impl From<OutputValue> for VerilogValue {
-    fn from(value: OutputValue) -> Self {
+impl From<ExpectedValue> for VerilogValue {
+    fn from(value: ExpectedValue) -> Self {
         match value {
-            OutputValue::Value(num) => VerilogValue::Value(num),
-            OutputValue::Z => VerilogValue::Z,
-            OutputValue::X => panic!("Unexpected X output value"),
+            ExpectedValue::Value(num) => VerilogValue::Value(num),
+            ExpectedValue::Z => VerilogValue::Z,
+            ExpectedValue::X => panic!("Unexpected X output value"),
         }
     }
 }

@@ -1,4 +1,4 @@
-use digital_test_runner::{dig, InputEntry, InputValue, OutputEntry, SignalDirection};
+use digital_test_runner::{dig, InputEntry, InputValue, OutputResultEntry, SignalType};
 use verilog::{VerilogIdentifier, VerilogValue};
 
 use clap::Parser;
@@ -21,8 +21,6 @@ struct Cli {
     output: Option<PathBuf>,
     #[arg(long, short, value_parser = parse_timescale)]
     timescale: Option<String>,
-    #[arg(long)]
-    default: bool,
     #[arg(long, short, default_value = "10:0", value_parser = parse_delay)]
     delay: (u32, u32),
 }
@@ -75,7 +73,7 @@ fn parse_delay(s: &str) -> Result<(u32, u32), String> {
 fn print_row<'a>(
     out: &mut Box<dyn std::io::Write>,
     inputs: impl Iterator<Item = &'a InputEntry<'a>>,
-    outputs: impl Iterator<Item = &'a OutputEntry<'a>>,
+    outputs: impl Iterator<Item = &'a OutputResultEntry<'a>>,
     delay: (u32, u32),
 ) -> anyhow::Result<()> {
     for input in inputs {
@@ -86,7 +84,7 @@ fn print_row<'a>(
     writeln!(out, "#{};", delay.0)?;
     for output in outputs {
         let identifier = VerilogIdentifier::from(output.signal);
-        let value = VerilogValue::from(output.value);
+        let value = VerilogValue::from(output.expected);
         writeln!(out, "    `assert_eq({identifier}, {value});",)?;
     }
     if delay.1 > 0 {
@@ -102,7 +100,7 @@ fn main() -> anyhow::Result<()> {
     let path = cli.file;
     eprintln!("Loading {path:?}");
     let input = std::fs::read_to_string(&path).unwrap();
-    let dig_file = dig::parse(&input).unwrap();
+    let dig_file = dig::File::parse(&input).unwrap();
 
     let test_num = match cli.test {
         Some(TestCaseSelector::Number(test_num)) => test_num,
@@ -164,10 +162,11 @@ fn main() -> anyhow::Result<()> {
         .signals
         .iter()
         .map(|sig| {
-            let io_type = match sig.dir {
-                SignalDirection::Input { .. } => "output reg",
-                SignalDirection::Output => "input",
-                SignalDirection::Bidirectional { .. } => "inout",
+            let io_type = match sig.typ {
+                SignalType::Input { .. } => "output reg",
+                SignalType::Output => "input",
+                SignalType::Bidirectional { .. } => "inout",
+                SignalType::Virtual { .. } => unreachable!(),
             };
             let width = if sig.bits > 1 {
                 format!("[{}:0] ", sig.bits - 1)
@@ -181,7 +180,7 @@ fn main() -> anyhow::Result<()> {
     writeln!(out, "module tb (\n{ports}\n);")?;
     writeln!(out, "integer error_count = 0;")?;
 
-    for sig in test_case.signals {
+    for sig in &test_case.signals {
         if sig.is_bidirectional() {
             writeln!(
                 out,
@@ -192,7 +191,7 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    for sig in test_case.signals {
+    for sig in &test_case.signals {
         if sig.is_bidirectional() {
             writeln!(
                 out,
@@ -204,21 +203,12 @@ fn main() -> anyhow::Result<()> {
     }
     writeln!(out, "initial begin")?;
 
-    if cli.default {
-        let row = test_case.default_row();
+    for row in test_case.run_iter(&mut digital_test_runner::static_test::Driver)? {
+        let row = row?;
         print_row(
             &mut out,
-            row.inputs.iter(),
-            row.checked_outputs(),
-            cli.delay,
-        )?;
-    }
-
-    for row in test_case.try_iter()? {
-        print_row(
-            &mut out,
-            row.changed_inputs(),
-            row.checked_outputs(),
+            row.inputs.iter().filter(|inp| inp.changed),
+            row.outputs.iter().filter(|outp| outp.is_checked()),
             cli.delay,
         )?;
     }
