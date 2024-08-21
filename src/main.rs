@@ -1,4 +1,4 @@
-use digital_test_runner::{dig, InputEntry, InputValue, OutputResultEntry, SignalType};
+use digital_test_runner::{dig, ExpectedEntry, ExpectedValue, InputEntry, InputValue, SignalType};
 use verilog::{VerilogIdentifier, VerilogValue};
 
 use clap::Parser;
@@ -73,7 +73,7 @@ fn parse_delay(s: &str) -> Result<(u32, u32), String> {
 fn print_row<'a>(
     out: &mut Box<dyn std::io::Write>,
     inputs: impl Iterator<Item = &'a InputEntry<'a>>,
-    outputs: impl Iterator<Item = &'a OutputResultEntry<'a>>,
+    outputs: impl Iterator<Item = &'a ExpectedEntry<'a>>,
     delay: (u32, u32),
 ) -> anyhow::Result<()> {
     for input in inputs {
@@ -84,7 +84,7 @@ fn print_row<'a>(
     writeln!(out, "#{};", delay.0)?;
     for output in outputs {
         let identifier = VerilogIdentifier::from(output.signal);
-        let value = VerilogValue::from(output.expected);
+        let value = VerilogValue::from(output.value);
         writeln!(out, "    `assert_eq({identifier}, {value});",)?;
     }
     if delay.1 > 0 {
@@ -203,12 +203,14 @@ fn main() -> anyhow::Result<()> {
     }
     writeln!(out, "initial begin")?;
 
-    for row in test_case.run_iter(&mut digital_test_runner::static_test::Driver)? {
+    for row in test_case.try_iter_static()? {
         let row = row?;
         print_row(
             &mut out,
             row.inputs.iter().filter(|inp| inp.changed),
-            row.outputs.iter().filter(|outp| outp.is_checked()),
+            row.expected
+                .iter()
+                .filter(|exp| exp.value != ExpectedValue::X),
             cli.delay,
         )?;
     }
