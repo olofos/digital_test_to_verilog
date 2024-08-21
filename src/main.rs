@@ -15,12 +15,17 @@ enum TestCaseSelector {
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
+    /// Path to dig file
     file: PathBuf,
+    /// Select test case by name or (zero based) index. Optional if there is only a single test.
     test: Option<TestCaseSelector>,
-    #[arg(long, short)]
+    /// Output file. By default the output is written to stdout.
+    #[arg(long, short, value_name = "FILE")]
     output: Option<PathBuf>,
+    /// Verilog timescale, eg, 10ns or 1us/1us
     #[arg(long, short, value_parser = parse_timescale)]
     timescale: Option<String>,
+    /// An argument such as "10:5" means dealy 10 ticks after setting inputs and 5 ticks after reading outputs. The second value is optional and defaults to zero.
     #[arg(long, short, default_value = "10:0", value_parser = parse_delay)]
     delay: (u32, u32),
 }
