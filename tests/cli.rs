@@ -10,9 +10,9 @@ fn cli_works() {
 
 fn expected_ouput(pre: &str, default: &str, delay1: &str, delay2: &str) -> String {
     format!(
-        r#"{pre}`define assert_eq(signal, value) \
+        r#"{pre}`define assert_eq(line_num, signal, value) \
     if (signal !== value) begin \
-        $display("ASSERTION FAILED in %m: signal != value"); \
+        $display("ASSERTION FAILED on line line_num: signal != value"); \
         error_count += 1; \
     end
 
@@ -27,7 +27,7 @@ initial begin{default}
     A = 1;
     B = 1;
 {delay1}
-    `assert_eq(\|S| , 2);
+    `assert_eq(2, \|S| , 2);
 {delay2}
   if(error_count > 0) begin
     $display("There were failed assertions");

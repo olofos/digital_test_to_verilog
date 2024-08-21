@@ -76,6 +76,7 @@ fn parse_delay(s: &str) -> Result<(u32, u32), String> {
 }
 
 fn print_row<'a>(
+    line: usize,
     out: &mut Box<dyn std::io::Write>,
     inputs: impl Iterator<Item = &'a InputEntry<'a>>,
     outputs: impl Iterator<Item = &'a ExpectedEntry<'a>>,
@@ -90,7 +91,7 @@ fn print_row<'a>(
     for output in outputs {
         let identifier = VerilogIdentifier::from(output.signal);
         let value = VerilogValue::from(output.value);
-        writeln!(out, "    `assert_eq({identifier}, {value});",)?;
+        writeln!(out, "    `assert_eq({line}, {identifier}, {value});",)?;
     }
     if delay.1 > 0 {
         writeln!(out, "#{};", delay.1)?;
@@ -155,9 +156,9 @@ fn main() -> anyhow::Result<()> {
 
     writeln!(
         out,
-        r#"`define assert_eq(signal, value) \
+        r#"`define assert_eq(line_num, signal, value) \
     if (signal !== value) begin \
-        $display("ASSERTION FAILED in %m: signal != value"); \
+        $display("ASSERTION FAILED on line line_num: signal != value"); \
         error_count += 1; \
     end"#
     )?;
@@ -211,6 +212,7 @@ fn main() -> anyhow::Result<()> {
     for row in test_case.try_iter_static()? {
         let row = row?;
         print_row(
+            row.line,
             &mut out,
             row.inputs.iter().filter(|inp| inp.changed),
             row.expected
