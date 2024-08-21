@@ -140,6 +140,10 @@ fn main() -> anyhow::Result<()> {
     eprintln!("Loading test case #{test_num}");
     let test_case = dig_file.load_test(test_num)?;
 
+    // Construct iterator before even opening the output file.
+    // This avoids overwriting the output file if the test is not static.
+    let it = test_case.try_iter_static()?;
+
     let mut out: Box<dyn std::io::Write> = if let Some(path) = cli.output {
         let Ok(file) = std::fs::File::create(&path) else {
             anyhow::bail!("Could not open file {path:?} for output");
@@ -209,7 +213,7 @@ fn main() -> anyhow::Result<()> {
     }
     writeln!(out, "initial begin")?;
 
-    for row in test_case.try_iter_static()? {
+    for row in it {
         let row = row?;
         print_row(
             row.line,
