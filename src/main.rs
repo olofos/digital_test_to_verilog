@@ -1,10 +1,17 @@
 use digital_test_runner::{dig, ExpectedEntry, ExpectedValue, InputEntry, InputValue, SignalType};
+use miette::IntoDiagnostic;
 use verilog::{VerilogIdentifier, VerilogValue};
 
 use clap::Parser;
 use std::path::PathBuf;
 
 mod verilog;
+
+macro_rules! outputln {
+    ($($t:tt)*) => {{
+        writeln!($($t)*).into_diagnostic()
+    }};
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum TestCaseSelector {
@@ -81,26 +88,26 @@ fn print_row<'a>(
     inputs: impl Iterator<Item = &'a InputEntry<'a>>,
     outputs: impl Iterator<Item = &'a ExpectedEntry<'a>>,
     delay: (u32, u32),
-) -> anyhow::Result<()> {
+) -> miette::Result<()> {
     for input in inputs {
         let identifier = VerilogIdentifier::from_input(input.signal);
         let value = VerilogValue::from(input.value);
-        writeln!(out, "    {identifier} = {value};",)?;
+        outputln!(out, "    {identifier} = {value};")?;
     }
-    writeln!(out, "#{};", delay.0)?;
+    outputln!(out, "#{};", delay.0)?;
     for output in outputs {
         let identifier = VerilogIdentifier::from(output.signal);
         let value = VerilogValue::from(output.value);
-        writeln!(out, "    `assert_eq({line}, {identifier}, {value});",)?;
+        outputln!(out, "    `assert_eq({line}, {identifier}, {value});")?;
     }
     if delay.1 > 0 {
-        writeln!(out, "#{};", delay.1)?;
+        outputln!(out, "#{};", delay.1)?;
     }
-    writeln!(out)?;
+    outputln!(out)?;
     Ok(())
 }
 
-fn main() -> anyhow::Result<()> {
+fn main() -> miette::Result<()> {
     let cli = Cli::parse();
 
     let path = cli.file;
@@ -118,7 +125,7 @@ fn main() -> anyhow::Result<()> {
             {
                 test_num
             } else {
-                anyhow::bail!("No test case \"{name}\" found");
+                miette::bail!("No test case \"{name}\" found");
             }
         }
         None => {
@@ -133,7 +140,7 @@ fn main() -> anyhow::Result<()> {
                         eprintln!("{i}: {}", test_case.name);
                     }
                 }
-                anyhow::bail!("Please specify a test case");
+                miette::bail!("Please specify a test case");
             }
         }
     };
@@ -146,7 +153,7 @@ fn main() -> anyhow::Result<()> {
 
     let mut out: Box<dyn std::io::Write> = if let Some(path) = cli.output {
         let Ok(file) = std::fs::File::create(&path) else {
-            anyhow::bail!("Could not open file {path:?} for output");
+            miette::bail!("Could not open file {path:?} for output");
         };
         eprintln!("Writing output to {path:?}");
         Box::new(file)
@@ -155,10 +162,10 @@ fn main() -> anyhow::Result<()> {
     };
 
     if let Some(timescale) = cli.timescale {
-        writeln!(out, "`timescale {timescale}\n")?;
+        outputln!(out, "`timescale {timescale}\n")?;
     }
 
-    writeln!(
+    outputln!(
         out,
         r#"`define assert_eq(line_num, signal, value) \
     if (signal !== value) begin \
@@ -166,7 +173,7 @@ fn main() -> anyhow::Result<()> {
         error_count += 1; \
     end"#
     )?;
-    writeln!(out,)?;
+    outputln!(out)?;
 
     let ports = test_case
         .signals
@@ -183,16 +190,16 @@ fn main() -> anyhow::Result<()> {
             } else {
                 String::from("")
             };
-            format!("    {io_type} {width}{}", VerilogIdentifier::from(sig),)
+            format!("    {io_type} {width}{}", VerilogIdentifier::from(sig))
         })
         .collect::<Vec<_>>()
         .join(",\n");
-    writeln!(out, "module tb (\n{ports}\n);")?;
-    writeln!(out, "integer error_count = 0;")?;
+    outputln!(out, "module tb (\n{ports}\n);")?;
+    outputln!(out, "integer error_count = 0;")?;
 
     for sig in &test_case.signals {
         if sig.is_bidirectional() {
-            writeln!(
+            outputln!(
                 out,
                 "reg {} = {};",
                 VerilogIdentifier::from_input(sig),
@@ -203,7 +210,7 @@ fn main() -> anyhow::Result<()> {
 
     for sig in &test_case.signals {
         if sig.is_bidirectional() {
-            writeln!(
+            outputln!(
                 out,
                 "assign {} = {};",
                 VerilogIdentifier::from(sig),
@@ -211,7 +218,7 @@ fn main() -> anyhow::Result<()> {
             )?;
         }
     }
-    writeln!(out, "initial begin")?;
+    outputln!(out, "initial begin")?;
 
     for row in it {
         let row = row?;
@@ -226,14 +233,14 @@ fn main() -> anyhow::Result<()> {
         )?;
     }
 
-    writeln!(out, "  if(error_count > 0) begin")?;
-    writeln!(out, "    $display(\"There were failed assertions\");")?;
-    writeln!(out, "    $finish_and_return(1);")?;
-    writeln!(out, "  end")?;
-    writeln!(out, "  $display(\"All tests passed.\");")?;
+    outputln!(out, "  if(error_count > 0) begin")?;
+    outputln!(out, "    $display(\"There were failed assertions\");")?;
+    outputln!(out, "    $finish_and_return(1);")?;
+    outputln!(out, "  end")?;
+    outputln!(out, "  $display(\"All tests passed.\");")?;
 
-    writeln!(out, "end")?;
-    writeln!(out, "endmodule")?;
+    outputln!(out, "end")?;
+    outputln!(out, "endmodule")?;
 
     Ok(())
 }
