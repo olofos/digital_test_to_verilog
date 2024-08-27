@@ -1,17 +1,7 @@
-use digital_test_runner::{dig, ExpectedEntry, ExpectedValue, InputEntry, InputValue, SignalType};
-use miette::IntoDiagnostic;
-use verilog::{VerilogIdentifier, VerilogValue};
+use digital_test_runner::dig;
 
 use clap::Parser;
 use std::path::PathBuf;
-
-mod verilog;
-
-macro_rules! outputln {
-    ($($t:tt)*) => {{
-        writeln!($($t)*).into_diagnostic()
-    }};
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum TestCaseSelector {
@@ -82,31 +72,6 @@ fn parse_delay(s: &str) -> Result<(u32, u32), String> {
     Ok((d1, d2))
 }
 
-fn print_row<'a>(
-    line: usize,
-    out: &mut Box<dyn std::io::Write>,
-    inputs: impl Iterator<Item = &'a InputEntry<'a>>,
-    outputs: impl Iterator<Item = &'a ExpectedEntry<'a>>,
-    delay: (u32, u32),
-) -> miette::Result<()> {
-    for input in inputs {
-        let identifier = VerilogIdentifier::from_input(input.signal);
-        let value = VerilogValue::from(input.value);
-        outputln!(out, "    {identifier} = {value};")?;
-    }
-    outputln!(out, "#{};", delay.0)?;
-    for output in outputs {
-        let identifier = VerilogIdentifier::from(output.signal);
-        let value = VerilogValue::from(output.value);
-        outputln!(out, "    `assert_eq({line}, {identifier}, {value});")?;
-    }
-    if delay.1 > 0 {
-        outputln!(out, "#{};", delay.1)?;
-    }
-    outputln!(out)?;
-    Ok(())
-}
-
 fn main() -> miette::Result<()> {
     let cli = Cli::parse();
 
@@ -144,105 +109,14 @@ fn main() -> miette::Result<()> {
             }
         }
     };
+
     eprintln!("Loading test case #{test_num}");
     let test_case = dig_file.load_test(test_num)?;
-
-    // Construct iterator before even opening the output file.
-    // This avoids overwriting the output file if the test is not static.
-    let it = test_case.try_iter_static()?;
-
-    let mut out: Box<dyn std::io::Write> = if let Some(path) = cli.output {
-        let Ok(file) = std::fs::File::create(&path) else {
-            miette::bail!("Could not open file {path:?} for output");
-        };
-        eprintln!("Writing output to {path:?}");
-        Box::new(file)
-    } else {
-        Box::new(std::io::stdout())
-    };
-
-    if let Some(timescale) = cli.timescale {
-        outputln!(out, "`timescale {timescale}\n")?;
-    }
-
-    outputln!(
-        out,
-        r#"`define assert_eq(line_num, signal, value) \
-    if (signal !== value) begin \
-        $display("ASSERTION FAILED on line line_num: signal != value"); \
-        error_count += 1; \
-    end"#
-    )?;
-    outputln!(out)?;
-
-    let ports = test_case
-        .signals
-        .iter()
-        .map(|sig| {
-            let io_type = match sig.typ {
-                SignalType::Input { .. } => "output reg",
-                SignalType::Output => "input",
-                SignalType::Bidirectional { .. } => "inout",
-                SignalType::Virtual { .. } => unreachable!(),
-            };
-            let width = if sig.bits > 1 {
-                format!("[{}:0] ", sig.bits - 1)
-            } else {
-                String::from("")
-            };
-            format!("    {io_type} {width}{}", VerilogIdentifier::from(sig))
-        })
-        .collect::<Vec<_>>()
-        .join(",\n");
-    outputln!(out, "module tb (\n{ports}\n);")?;
-    outputln!(out, "integer error_count = 0;")?;
-
-    for sig in &test_case.signals {
-        if sig.is_bidirectional() {
-            outputln!(
-                out,
-                "reg {} = {};",
-                VerilogIdentifier::from_input(sig),
-                VerilogValue::from(InputValue::Z)
-            )?;
-        }
-    }
-
-    for sig in &test_case.signals {
-        if sig.is_bidirectional() {
-            outputln!(
-                out,
-                "assign {} = {};",
-                VerilogIdentifier::from(sig),
-                VerilogIdentifier::from_input(sig)
-            )?;
-        }
-    }
-    outputln!(out, "initial begin")?;
-
-    for row in it {
-        let row = row?;
-        print_row(
-            row.line,
-            &mut out,
-            row.inputs.iter().filter(|inp| inp.changed),
-            row.expected
-                .iter()
-                .filter(|exp| exp.value != ExpectedValue::X),
-            cli.delay,
-        )?;
-    }
-
-    outputln!(out, "  if(error_count > 0) begin")?;
-    outputln!(out, "    $display(\"There were failed assertions\");")?;
-    outputln!(out, "    $finish_and_return(1);")?;
-    outputln!(out, "  end")?;
-    outputln!(out, "  $display(\"All tests passed.\");")?;
-
-    outputln!(out, "end")?;
-    outputln!(out, "endmodule")?;
-
-    Ok(())
+    digital_test_to_verilog::Builder::try_new(&test_case)?
+        .with_delay(cli.delay)
+        .with_timescale(cli.timescale)
+        .with_output(cli.output)
+        .done()
 }
 
 #[cfg(test)]
