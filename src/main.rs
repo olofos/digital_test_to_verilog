@@ -99,7 +99,7 @@ fn main() -> miette::Result<()> {
                 eprintln!("There are more than one test case in {path:?}");
                 for (i, test_case) in dig_file.test_cases.iter().enumerate() {
                     if test_case.name.is_empty() {
-                        eprintln!("{i}: [No name]");
+                        eprintln!("{i}: (unnamed)");
                     } else {
                         eprintln!("{i}: {}", test_case.name);
                     }
@@ -109,9 +109,19 @@ fn main() -> miette::Result<()> {
         }
     };
 
-    eprintln!("Loading test case #{test_num}");
+    eprintln!(
+        "Loading test case #{test_num}: {}",
+        dig_file.test_cases[test_num].name
+    );
     let test_case = dig_file.load_test(test_num)?;
-    digital_test_to_verilog::Builder::try_new(&test_case)?
+
+    let builder = digital_test_to_verilog::Builder::try_new(&test_case)?;
+
+    if let Some(path) = &cli.output {
+        eprintln!("Writing output to {path:?}");
+    }
+
+    builder
         .with_delay(cli.delay)
         .with_timescale(cli.timescale)
         .with_output(cli.output)

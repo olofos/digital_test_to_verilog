@@ -95,7 +95,6 @@ fn output_verilog(
         let Ok(file) = std::fs::File::create(&path) else {
             miette::bail!("Could not open file {path:?} for output");
         };
-        eprintln!("Writing output to {path:?}");
         Box::new(file)
     } else {
         Box::new(std::io::stdout())
