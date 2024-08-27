@@ -77,8 +77,7 @@ fn main() -> miette::Result<()> {
 
     let path = cli.file;
     eprintln!("Loading {path:?}");
-    let input = std::fs::read_to_string(&path).unwrap();
-    let dig_file = dig::File::parse(&input).unwrap();
+    let dig_file = dig::File::open(&path)?;
 
     let test_num = match cli.test {
         Some(TestCaseSelector::Number(test_num)) => test_num,
