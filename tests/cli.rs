@@ -8,7 +8,7 @@ fn cli_works() {
     cmd.arg("--help").assert().success();
 }
 
-fn expected_ouput(pre: &str, delay1: &str, delay2: &str) -> String {
+fn expected_output(pre: &str, delay1: &str, delay2: &str) -> String {
     format!(
         r#"{pre}`define assert_eq(line_num, signal, value) \
     if (signal !== value) begin \
@@ -42,7 +42,7 @@ endmodule
 
 #[test]
 fn can_load_test_file() {
-    let expected_ouput = expected_ouput("", "#10;", "");
+    let expected_output = expected_output("", "#10;", "");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
@@ -51,12 +51,12 @@ fn can_load_test_file() {
     ])
     .assert()
     .success()
-    .stdout(expected_ouput);
+    .stdout(expected_output);
 }
 
 #[test]
 fn can_load_test_by_name() {
-    let expected_ouput = expected_ouput("", "#10;", "");
+    let expected_output = expected_output("", "#10;", "");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
@@ -65,12 +65,12 @@ fn can_load_test_by_name() {
     ])
     .assert()
     .success()
-    .stdout(expected_ouput);
+    .stdout(expected_output);
 }
 
 #[test]
 fn timescale_works() {
-    let expected_ouput = expected_ouput("`timescale 1us/1ns\n\n", "#10;", "");
+    let expected_output = expected_output("`timescale 1us/1ns\n\n", "#10;", "");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
@@ -81,12 +81,12 @@ fn timescale_works() {
     ])
     .assert()
     .success()
-    .stdout(expected_ouput);
+    .stdout(expected_output);
 }
 
 #[test]
 fn timescale_works_with_one_time() {
-    let expected_ouput = expected_ouput("`timescale 1us/1us\n\n", "#10;", "");
+    let expected_output = expected_output("`timescale 1us/1us\n\n", "#10;", "");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
@@ -97,7 +97,7 @@ fn timescale_works_with_one_time() {
     ])
     .assert()
     .success()
-    .stdout(expected_ouput);
+    .stdout(expected_output);
 }
 
 #[test]
@@ -115,7 +115,7 @@ fn timescale_gives_error_for_unknown_unit() {
 
 #[test]
 fn delay_works() {
-    let expected_ouput = expected_ouput("", "#20;", "#10;\n");
+    let expected_output = expected_output("", "#20;", "#10;\n");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
@@ -126,12 +126,12 @@ fn delay_works() {
     ])
     .assert()
     .success()
-    .stdout(expected_ouput);
+    .stdout(expected_output);
 }
 
 #[test]
 fn delay_works_with_one_number() {
-    let expected_ouput = expected_ouput("", "#20;", "");
+    let expected_output = expected_output("", "#20;", "");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.args([
@@ -142,7 +142,7 @@ fn delay_works_with_one_number() {
     ])
     .assert()
     .success()
-    .stdout(expected_ouput);
+    .stdout(expected_output);
 }
 
 #[test]
@@ -150,7 +150,7 @@ fn output_to_file_works() {
     use std::io::Read;
     let dir = util::TempDir::create("output_to_file_works");
 
-    let expected_ouput = expected_ouput("", "#10;", "");
+    let expected_output = expected_output("", "#10;", "");
     let path = dir.file("output_to_file_works.v");
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
@@ -168,7 +168,7 @@ fn output_to_file_works() {
     let mut content = String::new();
     file.read_to_string(&mut content)
         .expect("Could not read output file.");
-    assert_eq!(content, expected_ouput);
+    assert_eq!(content, expected_output);
 
     dir.delete();
 }
